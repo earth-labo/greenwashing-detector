@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>エコたんてい - 環境表示を見ぬくゲーム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e0f7e9 0%, #b3e5d1 50%, #a8d5e2 100%);
+            min-height: 100vh;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn {
+            transition: all 0.3s ease;
+            border-radius: 16px;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .detective-badge {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .level-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .level-beginner {
+            background: #FFF3CD;
+            color: #856404;
+        }
+        
+        .level-intermediate {
+            background: #D1ECF1;
+            color: #0C5460;
+        }
+        
+        .level-advanced {
+            background: #F8D7DA;
+            color: #721C24;
+        }
+        
+        .score-animation {
+            animation: scoreUp 0.5s ease-out;
+        }
+        
+        @keyframes scoreUp {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .check-icon {
+            display: inline-block;
+            font-size: 24px;
+        }
+        
+        .product-card {
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .product-card:hover::before {
+            left: 100%;
+        }
+        
+        .diagnosis-result {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #E0E0E0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- ホーム画面 -->
+        <div id="home-screen" class="text-center">
+            <div class="detective-badge mx-auto mb-6">
+                🔍
+            </div>
+            <h1 class="text-5xl font-black text-gray-800 mb-4">エコたんてい</h1>
+            <p class="text-xl text-gray-600 mb-8">かんきょうひょうじを見ぬいて、<br>かしこいしょうひしゃになろう！</p>
+            
+            <div class="card p-8 mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">たんていポイント</h2>
+                <div class="text-6xl font-black text-green-600 mb-2 score-animation" id="total-score">0</div>
+                <p class="text-gray-600">ポイント</p>
+            </div>
+            
+            <button onclick="startGame()" class="btn bg-gradient-to-r from-green-500 to-green-600 text-white px-10 py-5 text-2xl shadow-lg">
+                たんていをはじめる 🚀
+            </button>
+            
+            <div class="mt-8 text-left">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">📚 あそびかた</h3>
+                <div class="card p-6">
+                    <ol class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="font-bold text-green-600 mr-2">1.</span>
+                            <span>しょうひんのかんきょうひょうじをしらべよう</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="font-bold text-green-600 mr-2">2.</span>
+                            <span>「ぐたいてき？」「しょうこは？」などチェック</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="font-bold text-green-600 mr-2">3.</span>
+                            <span>ポイントをためて、エコのひみつをまなぼう！</span>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <!-- レベル選択画面 -->
+        <div id="level-select-screen" class="hidden">
+            <button onclick="showHome()" class="mb-6 text-gray-600 hover:text-gray-800 flex items-center">
+                ← もどる
+            </button>
+            
+            <h2 class="text-4xl font-black text-gray-800 mb-8 text-center">レベルをえらぼう</h2>
+            
+            <div class="space-y-6">
+                <div class="card p-6 product-card" onclick="selectLevel('beginner')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="level-badge level-beginner mb-2">しょきゅう</span>
+                            <h3 class="text-2xl font-bold text-gray-800 mb-2">はじめてのたんてい</h3>
+                            <p class="text-gray-600">「ぐたいてき？」「しょうこは？」をチェック</p>
+                        </div>
+                        <div class="text-4xl">🌱</div>
+                    </div>
+                </div>
+                
+                <div class="card p-6 product-card" onclick="selectLevel('intermediate')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="level-badge level-intermediate mb-2">ちゅうきゅう</span>
+                            <h3 class="text-2xl font-bold text-gray-800 mb-2">なれたたんてい</h3>
+                            <p class="text-gray-600">ぜんたいを見る、トレードオフもチェック</p>
+                        </div>
+                        <div class="text-4xl">🌿</div>
+                    </div>
+                </div>
+                
+                <div class="card p-6 product-card" onclick="selectLevel('advanced')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="level-badge level-advanced mb-2">じょうきゅう</span>
+                            <h3 class="text-2xl font-bold text-gray-800 mb-2">プロたんてい</h3>
+                            <p class="text-gray-600">オフセット、ひかくひょうげんもチェック</p>
+                        </div>
+                        <div class="text-4xl">🌳</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 商品選択画面 -->
+        <div id="product-select-screen" class="hidden">
+            <button onclick="showLevelSelect()" class="mb-6 text-gray-600 hover:text-gray-800 flex items-center">
+                ← もどる
+            </button>
+            
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-2xl font-bold text-gray-800">たんていちゅう...</h2>
+                    <span class="text-gray-600"><span id="current-product-num">0</span> / <span id="total-products">3</span></span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <h3 class="text-3xl font-black text-gray-800 mb-6 text-center">しょうひんをえらぼう</h3>
+            
+            <div class="grid grid-cols-1 gap-6" id="product-list">
+                <!-- 商品カードがここに動的に追加されます -->
+            </div>
+        </div>
+        
+        <!-- 診断画面 -->
+        <div id="diagnosis-screen" class="hidden">
+            <button onclick="showProductSelect()" class="mb-6 text-gray-600 hover:text-gray-800 flex items-center">
+                ← もどる
+            </button>
+            
+            <div class="card p-6 mb-6">
+                <div class="text-center mb-4">
+                    <span class="text-6xl" id="product-icon">📦</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2 text-center" id="product-name">商品名</h3>
+                <div class="bg-gray-100 p-4 rounded-lg mb-4">
+                    <p class="text-gray-800 font-bold text-center" id="product-claim">環境表示</p>
+                </div>
+            </div>
+            
+            <div class="space-y-4" id="check-points">
+                <!-- チェックポイントがここに動的に追加されます -->
+            </div>
+            
+            <button onclick="showDiagnosis()" class="btn bg-gradient-to-r from-blue-500 to-blue-600 text-white w-full py-4 text-xl shadow-lg mt-6">
+                しんだんけっかを見る 🔍
+            </button>
+        </div>
+        
+        <!-- 診断結果画面 -->
+        <div id="result-screen" class="hidden">
+            <div class="diagnosis-result">
+                <div class="card p-8 mb-6">
+                    <div class="text-center mb-6">
+                        <div class="text-8xl mb-4" id="result-icon">⚠️</div>
+                        <h3 class="text-3xl font-black text-gray-800 mb-2" id="result-title">けっか</h3>
+                        <p class="text-gray-600" id="result-subtitle">サブタイトル</p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg mb-6">
+                        <h4 class="font-bold text-gray-800 mb-3 text-xl">たんていのメモ 📝</h4>
+                        <p class="text-gray-700 leading-relaxed" id="result-message">メッセージ</p>
+                    </div>
+                    
+                    <div id="result-details" class="space-y-4 mb-6">
+                        <!-- 診断詳細がここに動的に追加されます -->
+                    </div>
+                    
+                    <div class="bg-yellow-50 border-2 border-yellow-200 p-6 rounded-lg mb-6">
+                        <h4 class="font-bold text-gray-800 mb-3 text-xl flex items-center">
+                            <span class="mr-2">🌟</span> グッドポイント
+                        </h4>
+                        <p class="text-gray-700" id="good-points">良い点</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 border-2 border-blue-200 p-6 rounded-lg">
+                        <h4 class="font-bold text-gray-800 mb-3 text-xl flex items-center">
+                            <span class="mr-2">🤔</span> もっとしりたいこと
+                        </h4>
+                        <p class="text-gray-700" id="learn-more">もっと知りたいこと</p>
+                    </div>
+                </div>
+                
+                <div class="card p-6 mb-6">
+                    <h4 class="text-2xl font-bold text-center text-gray-800 mb-4">ゲット！</h4>
+                    <div class="text-center">
+                        <div class="text-6xl font-black text-green-600 mb-2 score-animation">+<span id="earned-points">10</span></div>
+                        <p class="text-gray-600">ポイント</p>
+                    </div>
+                </div>
+                
+                <button onclick="continueGame()" class="btn bg-gradient-to-r from-green-500 to-green-600 text-white w-full py-4 text-xl shadow-lg mb-4">
+                    つぎへ 🚀
+                </button>
+                
+                <button onclick="showHome()" class="btn bg-gray-200 text-gray-700 w-full py-3 text-lg">
+                    ホームにもどる
+                </button>
+            </div>
+        </div>
+        
+        <!-- 学習コンテンツ画面 -->
+        <div id="learning-screen" class="hidden">
+            <div class="card p-8">
+                <div class="text-center mb-6">
+                    <div class="text-8xl mb-4">🎓</div>
+                    <h3 class="text-3xl font-black text-gray-800 mb-2">レベルクリア！</h3>
+                    <p class="text-gray-600">あたらしいちしきをゲット！</p>
+                </div>
+                
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-8 rounded-lg mb-6" id="learning-content">
+                    <!-- 学習コンテンツがここに動的に追加されます -->
+                </div>
+                
+                <button onclick="nextLevel()" class="btn bg-gradient-to-r from-purple-500 to-pink-500 text-white w-full py-4 text-xl shadow-lg mb-4">
+                    つぎのレベルへ 🌟
+                </button>
+                
+                <button onclick="showHome()" class="btn bg-gray-200 text-gray-700 w-full py-3 text-lg">
+                    ホームにもどる
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ゲームデータ
+        const products = {
+            beginner: [
+                {
+                    id: 1,
+                    icon: '🍪',
+                    name: 'おかし',
+                    claim: '地球にやさしいお菓子',
+                    checkPoints: {
+                        specific: false,
+                        evidence: false
+                    },
+                    rating: 'warning',
+                    message: 'このひょうじは「地球にやさしい」と書いてあるけど、なにがどうやさしいのかせつめいがないね。もっとくわしくしりたいな！',
+                    goodPoints: 'かんきょうのことを考えているのはすてきだね！',
+                    learnMore: '「なにが」「どうやって」やさしいのか、ぐたいてきなせつめいがあるともっといいね。',
+                    points: 10
+                },
+                {
+                    id: 2,
+                    icon: '📓',
+                    name: 'ノート',
+                    claim: 'FSC認証紙使用 持続可能な森林から',
+                    checkPoints: {
+                        specific: true,
+                        evidence: true
+                    },
+                    rating: 'good',
+                    message: 'すごい！FSCにんしょうマークがあって、もりのかんりがちゃんとされていることがわかるね。しんらいできるひょうじだよ！',
+                    goodPoints: 'FSCというだいさんしゃのにんしょうがあって、しょうめいされているのがいいね！',
+                    learnMore: 'FSCにんしょうは、もりをまもりながらかみをつくっているしるしだよ。',
+                    points: 20
+                },
+                {
+                    id: 3,
+                    icon: '🧃',
+                    name: 'ジュースのボトル',
+                    claim: 'エコボトル 環境配慮型',
+                    checkPoints: {
+                        specific: false,
+                        evidence: false
+                    },
+                    rating: 'warning',
+                    message: '「エコボトル」「かんきょうはいりょがた」と書いてあるけど、なにがエコなのかわからないね。ぐたいてきなせつめいがほしいな！',
+                    goodPoints: 'かんきょうのことを考えているよ、とつたえようとしているね！',
+                    learnMore: '「なにをつかっているか」「どれくらいへらしたか」など、ぐたいてきなじょうほうがあるといいね。',
+                    points: 10
+                }
+            ],
+            intermediate: [
+                {
+                    id: 4,
+                    icon: '🧴',
+                    name: 'せんたくせんざい',
+                    claim: '植物由来成分100% 自然にやさしい',
+                    checkPoints: {
+                        specific: true,
+                        evidence: false,
+                        whole: false,
+                        tradeoff: false
+                    },
+                    rating: 'partial',
+                    message: 'せいぶんは100%しょくぶつゆらいってぐたいてきだね。でも、ボトルのプラスチックやせいぞうこうていのことはどうかな？ぜんたいをみることがたいせつだよ！',
+                    goodPoints: 'しょくぶつゆらいのせいぶんをつかっているのはいいとりくみだね！',
+                    learnMore: 'しょうひんぜんたいのライフサイクル（つくるとき、つかうとき、すてるとき）をかんがえよう。しょくぶつをそだてるときのかんきょうふたんもきになるね。',
+                    points: 15
+                },
+                {
+                    id: 5,
+                    icon: '🛍️',
+                    name: 'レジぶくろ',
+                    claim: 'バイオマスプラスチック25%配合',
+                    checkPoints: {
+                        specific: true,
+                        evidence: false,
+                        whole: false,
+                        tradeoff: false
+                    },
+                    rating: 'partial',
+                    message: '25%というすうじがあってぐたいてきだね！でも、のこりの75%はなにかな？だいさんしゃのにんしょうがあるともっとあんしんだよ。',
+                    goodPoints: 'パーセンテージをはっきりしめしているのはせいじつなひょうじだね！',
+                    learnMore: 'バイオマスプラスチックはしょくぶつからつくるけど、25%だけだとぜんたいのこうかはどれくらいかな？',
+                    points: 15
+                },
+                {
+                    id: 6,
+                    icon: '✏️',
+                    name: 'けしゴム',
+                    claim: 'リサイクル素材使用',
+                    checkPoints: {
+                        specific: false,
+                        evidence: false,
+                        whole: false,
+                        tradeoff: false
+                    },
+                    rating: 'warning',
+                    message: 'リサイクルそざいをつかっているのはいいけど、なんパーセント？どんなそざい？くわしいじょうほうがないとよくわからないね。',
+                    goodPoints: 'リサイクルのとりくみはとってもだいじ！',
+                    learnMore: 'リサイクルそざいのわりあい（なんパーセントか）やにんしょうマークがあるといいね。',
+                    points: 10
+                }
+            ],
+            advanced: [
+                {
+                    id: 7,
+                    icon: '📺',
+                    name: 'かでんせいひん',
+                    claim: 'カーボンニュートラル製品 CO2排出実質ゼロ',
+                    checkPoints: {
+                        specific: true,
+                        evidence: false,
+                        whole: true,
+                        tradeoff: false,
+                        offset: true,
+                        comparison: false
+                    },
+                    rating: 'question',
+                    message: 'カーボンニュートラルっていいひびきだけど、ほんとうにCO2をへらしたのかな？それとも、オフセット（べつのばしょでCO2をへらすこと）をかったのかな？そのちがいがだいじだよ！',
+                    goodPoints: 'CO2のことをかんがえているのはすばらしいね！',
+                    learnMore: '「さくげん」と「オフセット」はちがうよ。さくげんは、じっさいにCO2をへらすこと。オフセットは、べつのばしょでCO2をへらすけんりをかうこと。どちらなのかをかくにんしよう！',
+                    points: 20
+                },
+                {
+                    id: 8,
+                    icon: '🍿',
+                    name: 'スナックがし',
+                    claim: '当社従来品より30%CO2削減',
+                    checkPoints: {
+                        specific: true,
+                        evidence: false,
+                        whole: true,
+                        tradeoff: false,
+                        offset: false,
+                        comparison: true
+                    },
+                    rating: 'partial',
+                    message: '30%さくげんってすごいね！でも、もとのかずはどれくらいだったのかな？ぎょうかいへいきんとくらべてどうかな？ひかくのきじゅんをしりたいね。',
+                    goodPoints: 'すうじでしめしているのはわかりやすいね！さくげんのどりょくもすてき！',
+                    learnMore: 'ひかくひょうげんでは「なにとくらべて」がだいじ。もとのかずや、ぎょうかいへいきんとのひかくがあるともっといいね。',
+                    points: 15
+                },
+                {
+                    id: 9,
+                    icon: '🧻',
+                    name: 'ティッシュペーパー',
+                    claim: '再生紙100% 森を守る',
+                    checkPoints: {
+                        specific: true,
+                        evidence: true,
+                        whole: false,
+                        tradeoff: true,
+                        offset: false,
+                        comparison: false
+                    },
+                    rating: 'good',
+                    message: 'さいせいし100%でエコマークもついていてすばらしい！さらにくわしくしりたいこと：はくはくこうていやゆそうのかんきょうふたんはどうかな？',
+                    goodPoints: 'さいせいしをつかって、しんりんをまもるとりくみがすてき！エコマークもついているね！',
+                    learnMore: 'かみをリサイクルするときにみずやエネルギーをつかうから、そのこうていのかんきょうふたんもきになるね。ゆそうのきょりもかんがえよう。',
+                    points: 20
+                },
+                {
+                    id: 10,
+                    icon: '👕',
+                    name: 'Tシャツ',
+                    claim: 'オーガニックコットン使用 地球にやさしいファッション',
+                    checkPoints: {
+                        specific: true,
+                        evidence: false,
+                        whole: false,
+                        tradeoff: true,
+                        offset: false,
+                        comparison: false
+                    },
+                    rating: 'partial',
+                    message: 'オーガニックコットンはぐたいてきだね。でも、「やさしい」はあいまいかも。せんしょく、ほうせい、ゆそうのこともしりたいな。オーガニックコットンのみずしようりょうもきになるね。',
+                    goodPoints: 'オーガニックコットンをつかっているのはすばらしい！',
+                    learnMore: 'オーガニックにんしょうマークがあるかな？ふくぜんたいのライフサイクル（せいぞう、せんたく、はいき）をかんがえよう。',
+                    points: 15
+                }
+            ]
+        };
+        
+        const learningContent = {
+            beginner: {
+                title: '「ぐたいてき」と「しょうこ」のだいじさ',
+                content: `
+                    <h4 class="text-2xl font-bold text-gray-800 mb-4">🎯 たんていポイント1: ぐたいてきなせつめい</h4>
+                    <p class="text-gray-700 mb-4 leading-relaxed">
+                        「かんきょうにやさしい」「エコ」だけじゃわからないね。「なにが」「どうやって」やさしいのか、ぐたいてきなせつめいがだいじだよ！
+                    </p>
+                    <div class="bg-white p-4 rounded-lg mb-6">
+                        <p class="text-gray-700 mb-2"><strong>❌ あいまい：</strong>「エコなせいひん」</p>
+                        <p class="text-gray-700"><strong>✅ ぐたいてき：</strong>「CO2を30%さくげんしたせいひん」</p>
+                    </div>
+                    
+                    <h4 class="text-2xl font-bold text-gray-800 mb-4">🔍 たんていポイント2: しょうこをさがそう</h4>
+                    <p class="text-gray-700 mb-4 leading-relaxed">
+                        ほんとうかどうか、しょうめいするものがあるかな？にんしょうマークやすうじのデータがあると、しんらいできるね！
+                    </p>
+                    <div class="bg-white p-4 rounded-lg">
+                        <p class="text-gray-700 mb-2"><strong>しょうこのれい：</strong></p>
+                        <ul class="list-disc list-inside text-gray-700 space-y-1">
+                            <li>FSCにんしょう（もりをまもる）</li>
+                            <li>エコマーク（にほんのかんきょうラベル）</li>
+                            <li>ぐたいてきなすうじ（30%さくげんなど）</li>
+                        </ul>
+                    </div>
+                `
+            },
+            intermediate: {
+                title: '「ぜんたい」を見て「トレードオフ」をかんがえる',
+                content: `
+                    <h4 class="text-2xl font-bold text-gray-800 mb-4">🌍 たんていポイント3: ぜんたいを見よう</h4>
+                    <p class="text-gray-700 mb-4 leading-relaxed">
+                        しょうひんの一ぶだけじゃなくて、ぜんたいをみることがたいせつ。つくるとき、つかうとき、すてるとき、ぜんぶかんがえよう！
+                    </p>
+                    <div class="bg-white p-4 rounded-lg mb-6">
+                        <p class="text-gray-700 mb-2"><strong>れい：</strong>「さいせいしのノート」</p>
+                        <ul class="list-disc list-inside text-gray-700 space-y-1">
+                            <li>かみはさいせいし ✅</li>
+                            <li>でも、さいせいするときにみずをたくさんつかう？ 🤔</li>
+                            <li>ゆそうのきょりはとおい？ 🤔</li>
+                        </ul>
+                    </div>
+                    
+                    <h4 class="text-2xl font-bold text-gray-800 mb-4">⚖️ たんていポイント4: トレードオフ</h4>
+                    <p class="text-gray-700 mb-4 leading-relaxed">
+                        一つのもんだいをかいけつしても、べつのもんだいがおきることがあるよ。それを「トレードオフ」っていうんだ。
+                    </p>
+                    <div class="bg-white p-4 rounded-lg">
+                        <p class="text-gray-700 mb-2"><strong>れい：</strong>「バイオマスプラスチック」</p>
+                        <ul class="list-disc list-inside text-gray-700 space-y-1">
+                            <li>しょくぶつからつくるからいい ✅</li>
+                            <li>でも、そだてるときにたくさんみずやひりょうがいる 🤔</li>
+                            <li>たべものをつくるはたけがへるかも 🤔</li>
+                        </ul>
+                    </div>
+                `
+            },
+            advanced: {
+                title: '「オフセット」と「ひかく」のひみつ',
+                content: `
+                    <h4 class="text-2xl font-bold text-gray-800 mb-4">🔄 たんていポイント5: オフセットってなに？</h4>
+                    <p class="text-gray-700 mb-4 leading-relaxed">
+                        「カーボンニュートラル」「CO2ゼロ」とかいてあるとき、ちゅういしよう！
+                    </p>
+                    <div class="bg-white p-4 rounded-lg mb-6">
+                        <p class="text-gray-700 mb-3"><strong>2つのやりかたがあるよ：</strong></p>
+                        <div class="space-y-3">
+                            <div class="border-l-4 border-green-500 pl-4">
+                                <p class="text-gray-800 font-bold">✅ さくげん</p>
+                                <p class="text-gray-600 text-sm">じっさいにCO2をだすりょうをへらす</p>
+                            </div>
+                            <div class="border-l-4 border-yellow-500 pl-4">
+                                <p class="text-gray-800 font-bold">🤔 オフセット</p>
+                                <p class="text-gray-600 text-sm">べつのばしょでCO2をへらすけんりをかう</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mt-3 text-sm">
+                            どちらもだいじだけど、「さくげん」のほうがよりちょくせつてきだね。
+                        </p>
+                    </div>
+                    
+                    <h4 class="text-2xl font-bold text-gray-800 mb-4">📊 たんていポイント6: ひかくひょうげん</h4>
+                    <p class="text-gray-700 mb-4 leading-relaxed">
+                        「30%さくげん！」ってかいてあるとき、なにとくらべているのかな？
+                    </p>
+                    <div class="bg-white p-4 rounded-lg">
+                        <p class="text-gray-700 mb-2"><strong>チェックポイント：</strong></p>
+                        <ul class="list-disc list-inside text-gray-700 space-y-1">
+                            <li>なにとくらべて？（じしゃのむかしのせいひん？ぎょうかいへいきん？）</li>
+                            <li>もとのかずはどれくらい？</li>
+                            <li>いつからいつまでのひかく？</li>
+                        </ul>
+                        <p class="text-gray-700 mt-3 text-sm">
+                            ひかくのきじゅんがはっきりしていると、ほんとうのこうかがわかるね！
+                        </p>
+                    </div>
+                `
+            }
+        };
+        
+        // ゲーム状態
+        let currentLevel = '';
+        let currentProducts = [];
+        let currentProductIndex = 0;
+        let totalScore = 0;
+        let completedProducts = 0;
+        
+        // 画面表示関数
+        function showScreen(screenId) {
+            const screens = ['home-screen', 'level-select-screen', 'product-select-screen', 'diagnosis-screen', 'result-screen', 'learning-screen'];
+            screens.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+        
+        function showHome() {
+            showScreen('home-screen');
+            document.getElementById('total-score').textContent = totalScore;
+        }
+        
+        function showLevelSelect() {
+            showScreen('level-select-screen');
+        }
+        
+        function showProductSelect() {
+            showScreen('product-select-screen');
+            updateProgress();
+        }
+        
+        function startGame() {
+            showLevelSelect();
+        }
+        
+        function selectLevel(level) {
+            currentLevel = level;
+            currentProducts = products[level];
+            currentProductIndex = 0;
+            completedProducts = 0;
+            
+            // 商品リストを生成
+            const productList = document.getElementById('product-list');
+            productList.innerHTML = '';
+            
+            currentProducts.forEach((product, index) => {
+                const card = document.createElement('div');
+                card.className = 'card p-6 product-card';
+                card.onclick = () => selectProduct(index);
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-5xl">${product.icon}</div>
+                            <div>
+                                <h4 class="text-xl font-bold text-gray-800">${product.name}</h4>
+                                <p class="text-gray-600 text-sm">${product.claim.substring(0, 30)}...</p>
+                            </div>
+                        </div>
+                        <div class="text-2xl">👉</div>
+                    </div>
+                `;
+                productList.appendChild(card);
+            });
+            
+            document.getElementById('total-products').textContent = currentProducts.length;
+            showProductSelect();
+        }
+        
+        function selectProduct(index) {
+            currentProductIndex = index;
+            const product = currentProducts[index];
+            
+            // 商品情報を表示
+            document.getElementById('product-icon').textContent = product.icon;
+            document.getElementById('product-name').textContent = product.name;
+            document.getElementById('product-claim').textContent = product.claim;
+            
+            // チェックポイントを生成
+            const checkPointsDiv = document.getElementById('check-points');
+            checkPointsDiv.innerHTML = '';
+            
+            const checkPointLabels = {
+                specific: { label: 'ぐたいてきなせつめいがある？', icon: '📝' },
+                evidence: { label: 'しょうこやにんしょうがある？', icon: '🔍' },
+                whole: { label: 'しょうひんぜんたいのことをいってる？', icon: '🌍' },
+                tradeoff: { label: 'ほかのかんきょうもんだいはだいじょうぶ？', icon: '⚖️' },
+                offset: { label: 'さくげん？それともオフセット？', icon: '🔄' },
+                comparison: { label: 'ひかくのきじゅんははっきりしてる？', icon: '📊' }
+            };
+            
+            Object.keys(product.checkPoints).forEach(key => {
+                const value = product.checkPoints[key];
+                const info = checkPointLabels[key];
+                
+                const card = document.createElement('div');
+                card.className = 'card p-4';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-2xl">${info.icon}</span>
+                            <span class="text-gray-800 font-medium">${info.label}</span>
+                        </div>
+                        <div class="text-3xl">
+                            ${value ? '✅' : '❌'}
+                        </div>
+                    </div>
+                `;
+                checkPointsDiv.appendChild(card);
+            });
+            
+            showScreen('diagnosis-screen');
+        }
+        
+        function showDiagnosis() {
+            const product = currentProducts[currentProductIndex];
+            
+            // 結果アイコンとタイトルを設定
+            const ratingConfig = {
+                good: { icon: '✨', title: 'すばらしい！', subtitle: 'わかりやすいひょうじだね' },
+                partial: { icon: '🤔', title: 'まあまあかな', subtitle: 'いちぶのじょうほうだけ' },
+                warning: { icon: '⚠️', title: 'ようちゅうい', subtitle: 'もっとくわしくしりたいね' },
+                question: { icon: '❓', title: 'たしかめよう', subtitle: 'くわしいせつめいがひつよう' }
+            };
+            
+            const config = ratingConfig[product.rating];
+            document.getElementById('result-icon').textContent = config.icon;
+            document.getElementById('result-title').textContent = config.title;
+            document.getElementById('result-subtitle').textContent = config.subtitle;
+            document.getElementById('result-message').textContent = product.message;
+            document.getElementById('good-points').textContent = product.goodPoints;
+            document.getElementById('learn-more').textContent = product.learnMore;
+            document.getElementById('earned-points').textContent = product.points;
+            
+            // 診断詳細を生成
+            const detailsDiv = document.getElementById('result-details');
+            detailsDiv.innerHTML = '';
+            
+            const checkPointLabels = {
+                specific: { label: 'ぐたいせい', icon: '📝' },
+                evidence: { label: 'しょうこ', icon: '🔍' },
+                whole: { label: 'ぜんたいせい', icon: '🌍' },
+                tradeoff: { label: 'トレードオフ', icon: '⚖️' },
+                offset: { label: 'オフセット', icon: '🔄' },
+                comparison: { label: 'ひかく', icon: '📊' }
+            };
+            
+            Object.keys(product.checkPoints).forEach(key => {
+                const value = product.checkPoints[key];
+                const info = checkPointLabels[key];
+                
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xl">${info.icon}</span>
+                        <span class="text-gray-700 font-medium">${info.label}</span>
+                    </div>
+                    <span class="text-2xl">${value ? '✅' : '❌'}</span>
+                `;
+                detailsDiv.appendChild(item);
+            });
+            
+            // スコアを追加
+            totalScore += product.points;
+            completedProducts++;
+            
+            showScreen('result-screen');
+        }
+        
+        function continueGame() {
+            // プログレスを更新
+            updateProgress();
+            
+            // レベル内の全商品を診断したか確認
+            if (completedProducts >= currentProducts.length) {
+                showLearning();
+            } else {
+                showProductSelect();
+            }
+        }
+        
+        function updateProgress() {
+            document.getElementById('current-product-num').textContent = completedProducts;
+            const percentage = (completedProducts / currentProducts.length) * 100;
+            document.getElementById('progress-fill').style.width = percentage + '%';
+        }
+        
+        function showLearning() {
+            const content = learningContent[currentLevel];
+            const learningDiv = document.getElementById('learning-content');
+            learningDiv.innerHTML = `
+                <h3 class="text-3xl font-black text-gray-800 mb-6">${content.title}</h3>
+                ${content.content}
+            `;
+            showScreen('learning-screen');
+        }
+        
+        function nextLevel() {
+            const levels = ['beginner', 'intermediate', 'advanced'];
+            const currentIndex = levels.indexOf(currentLevel);
+            
+            if (currentIndex < levels.length - 1) {
+                selectLevel(levels[currentIndex + 1]);
+            } else {
+                // 全レベルクリア
+                alert('🎉 ぜんぶのレベルをクリア！\nきみはエコたんていマスターだ！');
+                showHome();
+            }
+        }
+        
+        // 初期表示
+        showHome();
+    </script>
+</body>
+</html>
